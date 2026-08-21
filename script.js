@@ -8,13 +8,13 @@
    복사할 수 있어요. Realtime Database 를 "테스트 모드"로 만들어두면 됩니다.
 ========================================================= */
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyC3mJ154TL6zHaCYOxYJ1GMNm4v_ea1mS8",
+  authDomain: "noranghanul-3f1d6.firebaseapp.com",
+  databaseURL: "TODO_여기에_Realtime_Database_URL_넣기", // 아래 안내 참고!
+  projectId: "noranghanul-3f1d6",
+  storageBucket: "noranghanul-3f1d6.firebasestorage.app",
+  messagingSenderId: "500383593409",
+  appId: "1:500383593409:web:78d597e27756c4954a3540"
 };
 /* ========================================================= */
 
@@ -35,7 +35,10 @@ let editingChoreId = null; // 모달에서 수정 중인 chore id (null이면 �
 
 /* ---------- 초기화 ---------- */
 function isConfigFilled(){
-  return firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("YOUR_");
+  return firebaseConfig.apiKey
+    && !firebaseConfig.apiKey.includes("YOUR_")
+    && firebaseConfig.databaseURL
+    && !firebaseConfig.databaseURL.includes("TODO");
 }
 
 function init(){

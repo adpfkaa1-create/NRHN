@@ -10,7 +10,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyC3mJ154TL6zHaCYOxYJ1GMNm4v_ea1mS8",
   authDomain: "noranghanul-3f1d6.firebaseapp.com",
-  databaseURL: "TODO_여기에_Realtime_Database_URL_넣기", // 아래 안내 참고!
+  databaseURL: "https://noranghanul-3f1d6-default-rtdb.firebaseio.com",
   projectId: "noranghanul-3f1d6",
   storageBucket: "noranghanul-3f1d6.firebasestorage.app",
   messagingSenderId: "500383593409",

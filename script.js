@@ -24,6 +24,10 @@ const PEOPLE = {
 };
 const WEEKLY_GOAL = 100;
 
+// 한 주가 바뀌는 시각: 월요일 새벽 4시. 자정에 바로 넘어가지 않도록,
+// "주 판정용 시각"을 4시간 앞당겨서 계산한다 (월요일 03:59는 지난 주로 취급).
+const WEEK_ROLLOVER_HOUR = 4;
+
 let db = null;
 let chores = {};          // choreId -> {name, score, max, order}
 let currentWeekKey = "";
@@ -50,15 +54,24 @@ function init(){
   firebase.initializeApp(firebaseConfig);
   db = firebase.database();
 
-  currentWeekKey = getWeekKey(new Date());
+  currentWeekKey = getWeekKey(getRolloverAdjustedNow());
   renderWeekRange();
 
   listenChores();
   listenWeekData();
   bindUI();
+  scheduleWeekCheck();
 }
 
 /* ---------- 주(week) 키 계산 ---------- */
+
+// "지금"을 WEEK_ROLLOVER_HOUR만큼 앞당긴 시각으로 바꿔서 반환.
+// 월요일 00:00~03:59 사이에는 아직 "지난 주 연장선"으로 취급하기 위함.
+function getRolloverAdjustedNow(){
+  const now = new Date();
+  return new Date(now.getTime() - WEEK_ROLLOVER_HOUR * 60 * 60 * 1000);
+}
+
 function getWeekKey(date){
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const day = d.getUTCDay() || 7;
@@ -68,6 +81,7 @@ function getWeekKey(date){
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
+// 화면에 보여줄 "이번 주 월~일" 날짜 범위도 같은 기준(4시 컷오프)으로 계산
 function getMondayOfWeek(date){
   const d = new Date(date);
   const day = d.getDay() || 7;
@@ -77,12 +91,25 @@ function getMondayOfWeek(date){
 }
 
 function renderWeekRange(){
-  const monday = getMondayOfWeek(new Date());
+  const monday = getMondayOfWeek(getRolloverAdjustedNow());
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
   const fmt = (dt) => `${dt.getMonth()+1}.${dt.getDate()}`;
   document.getElementById("weekRange").textContent =
     `이번 주 · ${fmt(monday)} ~ ${fmt(sunday)}`;
+}
+
+// 1분마다 "지금이 월요일 새벽 4시를 넘겼는지" 확인해서, 넘겼으면
+// 새로고침 없이도 자동으로 새 주로 전환한다 (밤새 켜둔 화면 대응).
+function scheduleWeekCheck(){
+  setInterval(() => {
+    const newKey = getWeekKey(getRolloverAdjustedNow());
+    if (newKey !== currentWeekKey){
+      currentWeekKey = newKey;
+      renderWeekRange();
+      listenWeekData(); // 새 주 데이터로 리스너 다시 연결
+    }
+  }, 60 * 1000);
 }
 
 /* ---------- Firebase 리스너 ---------- */
@@ -102,22 +129,27 @@ function listenChores(){
   });
 }
 
-function listenWeekData(){
-  const weekRef = db.ref(`weeks/${currentWeekKey}`);
+let weekDataRef = null; // 주 전환 시 이전 리스너 해제용
 
-  weekRef.child("counts").on("value", snap => {
+function listenWeekData(){
+  if (weekDataRef){
+    weekDataRef.off();
+  }
+  weekDataRef = db.ref(`weeks/${currentWeekKey}`);
+
+  weekDataRef.child("counts").on("value", snap => {
     weekCounts = snap.val() || {};
     renderChoreList();
   });
 
-  weekRef.child("totals").on("value", snap => {
+  weekDataRef.child("totals").on("value", snap => {
     const v = snap.val() || {};
     weekTotals.yeram = v.yeram || 0;
     weekTotals.haneul = v.haneul || 0;
     renderScores();
   });
 
-  weekRef.child("logs").on("value", snap => {
+  weekDataRef.child("logs").on("value", snap => {
     weekLogs = snap.val() || {};
     renderActivityLog();
   });
